@@ -530,13 +530,12 @@
       ============================================================ */
 
       var firebaseConfig = {
-        apiKey: "AIzaSyBr_drU2L3wndWce7i2Pjtpepuwc_VnAzY",
-        authDomain: "wordle-d7fab.firebaseapp.com",
+        apiKey: "AIzaSyDx__LsbF99d1mcst4rQMzxySn7IxTH-Co",
+        authDomain: "stephen-d1376.firebaseapp.com",
         databaseURL:
-          "https://wordle-d7fab-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-        projectId: "wordle-d7fab",
-        appId: "1:1048912631015:web:f389f317c49a4eeb89be42",
+          "https://stephen-d1376-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "stephen-d1376",
+        appId: "1:593459222936:web:445c5ea1fccd03e67733ed",
       };
       firebase.initializeApp(firebaseConfig);
       var root = firebase.database().ref("battleships");
@@ -550,7 +549,7 @@
         { id: "destroyer", name: "Destroyer", size: 2 },
       ];
       var WAIT_TEXT =
-        "Let's wait for {N} to finish his game but he is much better than you so I assume you lost!";
+        "Let's wait for {N} to finish their game but they are much better than you so I assume you lost!";
 
       /* ---------- Helpers ---------- */
       function $(id) {
@@ -624,10 +623,23 @@
       var busy = false;
       var lastShot = -1;
 
+      function recapDue(d) {
+        var lr = d.lastResult;
+        if (!lr || !lr.players || !lr.players[me] || !lr.players[opp])
+          return false;
+        if (localStorage.getItem("bs_seen") === String(lr.id)) return false;
+        if (localStorage.getItem("bs_sawResults") === "1") {
+          localStorage.setItem("bs_seen", String(lr.id));
+          localStorage.removeItem("bs_sawResults");
+          return false;
+        }
+        return true;
+      }
+
       function phaseOf(d) {
         var m = d[me] || {},
           t = d[opp] || {};
-        if (!m.ships) return "place";
+        if (!m.ships) return recapDue(d) ? "recap" : "place";
         if (!t.ships) return "waitships";
         if (!m.done) return "play";
         if (!t.done) return "waitfinish";
@@ -664,7 +676,7 @@
           $("waitShipsText").textContent =
             "Your fleet is locked in. Waiting for " +
             cap(opp) +
-            " to place his ships…";
+            " to place their ships…";
           show("s-waitships");
         }
         if (p === "play") {
@@ -678,13 +690,21 @@
         if (p === "waitfinish") {
           $("waitFinishText").textContent = WAIT_TEXT.replace("{N}", cap(opp));
           $("myTriesText").textContent =
-            "You sank his fleet in " +
+            "You sank their fleet in " +
             (data[me].tries || toArr(data[me].shots).length) +
             " shots.";
           show("s-waitfinish");
         }
         if (p === "results") {
-          renderResults();
+          localStorage.setItem("bs_sawResults", "1");
+          $("newGameBtn").textContent = "New game";
+          renderResults(data[me], data[opp]);
+          show("s-results");
+        }
+        if (p === "recap") {
+          var lr = data.lastResult;
+          $("newGameBtn").textContent = "Continue";
+          renderResults(lr.players[me], lr.players[opp]);
           show("s-results");
         }
       }
@@ -984,9 +1004,7 @@
         }
       }
 
-      function renderResults() {
-        var m = data[me],
-          t = data[opp];
+      function renderResults(m, t) {
         var myShots = toArr(m.shots),
           theirShots = toArr(t.shots);
         var myTries = m.tries || myShots.length;
@@ -1025,10 +1043,24 @@
       }
 
       $("newGameBtn").addEventListener("click", function () {
-        if (confirm("Start a new game? This clears both boards."))
-          root.remove();
+        if (phase === "recap") {
+          localStorage.setItem("bs_seen", String(data.lastResult.id));
+          phase = phaseOf(data);
+          enterPhase(phase);
+          return;
+        }
+        if (!confirm("Start a new game? This clears both boards.")) return;
+        var snap = { id: Date.now(), players: {} };
+        [me, opp].forEach(function (p) {
+          var d = data[p] || {};
+          snap.players[p] = {
+            ships: toArr(d.ships),
+            shots: toArr(d.shots),
+            tries: d.tries || toArr(d.shots).length,
+          };
+        });
+        root.set({ lastResult: snap });
       });
-
       /* ---------- Go ---------- */
       if (me) {
         setPlayer(me);
