@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Hi Elle</title>
+
+    <!-- Home screen icon + full-screen app mode -->
+    <link rel="apple-touch-icon" href="homeicon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Games" />
+    <meta name="theme-color" content="#121213" />
+
+    <style>
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #121213;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Rounded", system-ui,
+          sans-serif;
+        color: #fff;
+      }
+
+      /* ---------- Background ---------- */
+      .bg {
+        position: fixed;
+        inset: 0;
+        background:
+          url("back.png") center / cover no-repeat,
+          #121213;
+        transform: scale(1.08);
+        animation: drift 18s ease-in-out infinite alternate;
+      }
+      .bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.55),
+          rgba(0, 0, 0, 0.25) 40%,
+          rgba(0, 0, 0, 0.65)
+        );
+      }
+      @keyframes drift {
+        from {
+          transform: scale(1.08) translate(0, 0);
+        }
+        to {
+          transform: scale(1.14) translate(-1.5%, -1%);
+        }
+      }
+
+      /* ---------- Menu ---------- */
+      .menu {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+      }
+      h1 {
+        margin: 0 0 18px;
+        font-size: 3rem;
+        line-height: 1.05;
+        font-weight: 900;
+        text-align: center;
+        letter-spacing: -0.5px;
+        text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+        opacity: 0;
+        transform: translateY(-20px) scale(0.9);
+      }
+      .ready h1 {
+        animation:
+          titleIn 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) 0.1s forwards,
+          wobble 4s ease-in-out 0.9s infinite;
+      }
+      @keyframes titleIn {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes wobble {
+        0%,
+        100% {
+          transform: rotate(-1.5deg);
+        }
+        50% {
+          transform: rotate(1.5deg);
+        }
+      }
+
+      .menu-btn {
+        width: 100%;
+        max-width: 320px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 20px;
+        min-height: 160px;
+        position: relative;
+        overflow: hidden;
+        font: inherit;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        transform: translateY(40px);
+        transition: transform 0.12s ease;
+      }
+      .menu-btn:active {
+        transform: scale(0.94) !important;
+      }
+      .menu-btn.wordle {
+        background: rgba(83, 141, 78, 0.85);
+      }
+      .menu-btn.battle {
+        background: rgba(30, 90, 170, 0.85);
+      }
+      .ready .menu-btn {
+        animation: slideUp 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) forwards;
+      }
+      .ready .menu-btn.wordle {
+        animation-delay: 0.35s;
+      }
+      .ready .menu-btn.battle {
+        animation-delay: 0.5s;
+      }
+      @keyframes slideUp {
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .menu-btn small {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        opacity: 0.8;
+        margin-top: 2px;
+      }
+
+      /* Wordle button tiles */
+      .menu-btn.wordle {
+        justify-content: center;
+      }
+      .word-tiles {
+        display: flex;
+        gap: 5px;
+        width: 100%;
+        perspective: 600px;
+      }
+      .word-tiles span {
+        flex: 1;
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        border-radius: 6px;
+        background: #3a3a3c;
+      }
+      .word-tiles .g {
+        background: #538d4e;
+      }
+      .word-tiles .y {
+        background: #b59f3b;
+      }
+      /* Occasional flip wave, same colours and letters */
+      .ready .word-tiles span {
+        animation: tileFlip 4s ease-in-out infinite;
+      }
+      .ready .word-tiles span:nth-child(1) {
+        animation-delay: 2s;
+      }
+      .ready .word-tiles span:nth-child(2) {
+        animation-delay: 2.15s;
+      }
+      .ready .word-tiles span:nth-child(3) {
+        animation-delay: 2.3s;
+      }
+      .ready .word-tiles span:nth-child(4) {
+        animation-delay: 2.45s;
+      }
+      .ready .word-tiles span:nth-child(5) {
+        animation-delay: 2.6s;
+      }
+      .ready .word-tiles span:nth-child(6) {
+        animation-delay: 2.75s;
+      }
+      @keyframes tileFlip {
+        0% {
+          transform: rotateX(0);
+        }
+        5% {
+          transform: rotateX(90deg);
+        }
+        10% {
+          transform: rotateX(0);
+        }
+        100% {
+          transform: rotateX(0);
+        }
+      }
+      /* Battleships button */
+      .menu-btn.battle {
+        justify-content: center;
+      }
+      .battle-title {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        text-align: center;
+        font-size: 2.8rem;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+      }
+      .cannon {
+        position: absolute;
+        left: 15px;
+        bottom: -10px;
+        width: 200px;
+        height: 100px;
+        z-index: 3;
+        object-fit: contain;
+        object-position: left bottom;
+        pointer-events: none;
+        -webkit-user-drag: none;
+      }
+      .ball {
+        position: absolute;
+        z-index: 2;
+        left: 80px;
+        top: 94px;
+        width: 16px;
+        height: 16px;
+        opacity: 0;
+        will-change: transform, opacity;
+        animation: ballX 3s linear infinite;
+      }
+      .ball::after {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #8a8a8a, #1a1a1a 70%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        will-change: transform;
+        animation: ballY 3s infinite;
+      }
+      @keyframes ballX {
+        0% {
+          transform: translateX(0);
+          opacity: 0;
+        }
+        3% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        70% {
+          transform: translateX(204px);
+          opacity: 1;
+        }
+        71% {
+          transform: translateX(204px);
+          opacity: 0;
+        }
+        100% {
+          transform: translateX(0);
+          opacity: 0;
+        }
+      }
+      @keyframes ballY {
+        0% {
+          transform: translateY(0);
+          animation-timing-function: ease-out;
+        }
+        35% {
+          transform: translateY(-64px);
+          animation-timing-function: ease-in;
+        }
+        70% {
+          transform: translateY(36px);
+        }
+        100% {
+          transform: translateY(36px);
+        }
+      }
+      /* ---------- Loading screen ---------- */
+      .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: #121213;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        transition:
+          opacity 0.5s ease,
+          visibility 0.5s;
+      }
+      .loader.hide {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .loader-tiles {
+        display: flex;
+        gap: 8px;
+        perspective: 600px;
+      }
+      .loader-tiles span {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        font-weight: 900;
+        border: 2px solid #3a3a3c;
+        border-radius: 6px;
+        animation: flip 1.2s ease-in-out infinite;
+      }
+      .loader-tiles span:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .loader-tiles span:nth-child(2) {
+        animation-delay: 0.12s;
+      }
+      .loader-tiles span:nth-child(3) {
+        animation-delay: 0.24s;
+      }
+      .loader-tiles span:nth-child(4) {
+        animation-delay: 0.36s;
+      }
+      .loader-tiles span:nth-child(5) {
+        animation-delay: 0.48s;
+      }
+      @keyframes flip {
+        0%,
+        15% {
+          transform: rotateX(0);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+        35% {
+          transform: rotateX(90deg);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+        50%,
+        85% {
+          transform: rotateX(0);
+          background: #538d4e;
+          border-color: #538d4e;
+        }
+        100% {
+          transform: rotateX(0);
+          background: transparent;
+          border-color: #3a3a3c;
+        }
+      }
+      .loader p {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 3px;
+        font-size: 0.9rem;
+        color: #818384;
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      /* Fade out when leaving to a game */
+      .leaving .menu {
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader" id="loader">
+      <div class="loader-tiles">
+        <span>P</span><span>L</span><span>A</span><span>Y</span><span>!</span>
+      </div>
+      <p>LOADING</p>
+    </div>
+
+    <div class="bg"></div>
+
+    <div class="menu" id="menu">
+      <h1>Stephen<br />is a dick!</h1>
+
+      <a class="menu-btn wordle" href="wordle.html">
+        <div class="word-tiles">
+          <span class="g">W</span><span class="y">O</span><span>R</span
+          ><span class="g">D</span><span class="y">L</span><span>E</span>
+        </div>
+      </a>
+
+      <a class="menu-btn battle" href="battleships.html">
+        <img class="cannon" src="cannon.png" alt="" />
+        <div class="battle-title">Battleships</div>
+        <span class="ball"></span>
+      </a>
+    </div>
+
+    <script>
+      var loader = document.getElementById("loader");
+      var start = Date.now();
+      var MIN_LOAD = 1400; // show the loader at least this long (ms)
+
+      function reveal() {
+        var wait = Math.max(0, MIN_LOAD - (Date.now() - start));
+        setTimeout(function () {
+          loader.classList.add("hide");
+          document.body.classList.add("ready");
+        }, wait);
+      }
+
+      // Wait for the background image, but never hang if it fails
+      var img = new Image();
+      img.onload = img.onerror = reveal;
+      img.src = "back.png";
+
+      // Fade out before navigating to a game
+      document.querySelectorAll(".menu-btn").forEach(function (a) {
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.body.classList.add("leaving");
+          setTimeout(function () {
+            location.href = a.href;
+          }, 250);
+        });
+      });
+
+      // Fix state when coming back with the Back button (iOS page cache)
+      window.addEventListener("pageshow", function (e) {
+        if (e.persisted) document.body.classList.remove("leaving");
+      });
+    </script>
+  </body>
+</html>
