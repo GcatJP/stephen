@@ -94,6 +94,20 @@
         text-decoration: none;
       }
 
+      .scorebar {
+        display: none;
+        justify-content: center;
+        margin: -2px 0 10px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+      .scorebar span {
+        background: rgba(9, 26, 41, 0.7);
+        border: 1px solid var(--brass-dim);
+        border-radius: 999px;
+        padding: 4px 14px;
+        color: var(--brass);
+      }
       h1,
       h2 {
         margin: 0;
@@ -439,6 +453,8 @@
         <button id="switchBtn" style="display: none"></button>
       </div>
 
+      <div class="scorebar" id="scoreBar"><span id="score"></span></div>
+
       <!-- Connecting -->
       <div class="screen on" id="s-loading">
         <div class="panel big">
@@ -646,10 +662,35 @@
         return "results";
       }
 
+      function renderScore() {
+        var sc = data.scores || {};
+        $("score").textContent =
+          "Elle " + (sc.Elle || 0) + " – " + (sc.stephen || 0) + " Stephen";
+        $("scoreBar").style.display = "flex";
+      }
+
+      // Adds one win to the winner, once per game (ties score nothing)
+      function bankScore() {
+        root.transaction(function (cur) {
+          if (!cur || cur.counted) return;
+          var a = cur.Elle || {},
+            b = cur.stephen || {};
+          if (!a.done || !b.done) return;
+          var ta = a.tries || toArr(a.shots).length,
+            tb = b.tries || toArr(b.shots).length;
+          cur.scores = cur.scores || {};
+          if (ta < tb) cur.scores.Elle = (cur.scores.Elle || 0) + 1;
+          else if (tb < ta) cur.scores.stephen = (cur.scores.stephen || 0) + 1;
+          cur.counted = true;
+          return cur;
+        });
+      }
+
       function start() {
         show("s-loading");
         root.on("value", function (snap) {
           data = snap.val() || {};
+          renderScore();
           var p = phaseOf(data);
           if (p !== phase) {
             var prev = phase;
@@ -697,6 +738,7 @@
         }
         if (p === "results") {
           localStorage.setItem("bs_sawResults", "1");
+          bankScore();
           $("newGameBtn").textContent = "New game";
           renderResults(data[me], data[opp]);
           show("s-results");
@@ -1059,7 +1101,12 @@
             tries: d.tries || toArr(d.shots).length,
           };
         });
-        root.set({ lastResult: snap });
+        root.update({
+          lastResult: snap,
+          Elle: null,
+          stephen: null,
+          counted: null,
+        });
       });
       /* ---------- Go ---------- */
       if (me) {
